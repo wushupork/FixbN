@@ -782,6 +782,11 @@ try {
 					} else {
 						commentForm.append("<h2 style='display:inline;color:green;'>Keep Thread Safe For Work</h2>");
 					}
+		                        var modindex = warning.text().indexOf("thread."); //Add moderated thread text back in *wushupork 05/03/2014
+					if (modindex > 0) {
+						var modtext = warning.text().substr((modindex+7));
+						commentForm.append("<br /><br />This is a moderated thread. "+modtext); 
+					}
 					commentForm.css('width:90%;');
 				}
 
