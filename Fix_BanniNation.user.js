@@ -66,6 +66,11 @@ try {
 							'type': 'checkbox',
 							'default': true
 						},
+                         'hideModThreads': {
+                            'label': 'Hide all Moderated Threads',
+                            'type': 'checkbox',
+                            'default': false
+                        },
 						'fixedHeader': {
 							'label': "Keep Header at Top of Window",
 							'type': 'checkbox',
@@ -433,7 +438,12 @@ try {
 
 				// fuck the welcome
 				$("div#welcome").css("display", "none");
-
+               
+                //hide moderated threads
+                if (GM_config.get("hideModThreads")) {
+						$("div.moder").css("display", "none");
+			    }
+            
 				// fix bydate stories
 				if (bnurl.isHeadlinesByDate()) {
 					var stories = $("table#stories tr");
