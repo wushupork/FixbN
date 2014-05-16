@@ -66,11 +66,11 @@ try {
 							'type': 'checkbox',
 							'default': true
 						},
-                         'hideModThreads': {
-                            'label': 'Hide all Moderated Threads',
-                            'type': 'checkbox',
-                            'default': false
-                        },
+						 'hideModThreads': {
+							'label': 'Hide all Moderated Threads',
+							'type': 'checkbox',
+							'default': false
+						},
 						'fixedHeader': {
 							'label': "Keep Header at Top of Window",
 							'type': 'checkbox',
@@ -439,12 +439,12 @@ try {
 
 				// fuck the welcome
 				$("div#welcome").css("display", "none");
-               
-                //hide moderated threads
-                if (GM_config.get("hideModThreads")) {
+			   
+				//hide moderated threads
+				if (GM_config.get("hideModThreads")) {
 						$("div.moder").css("display", "none");
-			    }
-            
+				}
+			
 				// fix bydate stories
 				if (bnurl.isHeadlinesByDate()) {
 					var stories = $("table#stories tr");
@@ -793,7 +793,7 @@ try {
 					} else {
 						commentForm.append("<h2 style='display:inline;color:green;'>Keep Thread Safe For Work</h2>");
 					}
-		                        var modindex = warning.text().indexOf("thread."); //Add moderated thread text back in *wushupork 05/03/2014
+								var modindex = warning.text().indexOf("thread."); //Add moderated thread text back in *wushupork 05/03/2014
 					if (modindex > 0) {
 						var modtext = warning.text().substr((modindex+7));
 						commentForm.append("<br /><br />This is a moderated thread. "+modtext); 
