@@ -276,23 +276,6 @@ try {
 						originalLogoutLink.closest("li").hide();
 						var list = selfLink.closest("ul");
 
-						selfLink.click(function (event) {
-							event.preventDefault();
-							try {
-								profilePopup.toggle();
-								if (profilePopup.is(":visible")) {
-									profilePopup.position({
-										my: "right top",
-										at: "right bottom",
-										of: $("div#menu"),
-										collision: "fit"
-									});
-								loadComments();
-								}
-							} catch (ex) {
-								console.error(ex);
-							}
-						});
 						originalLogoutLink.appendTo(profilePopup);
 						var profileLink = selfLink.clone();
 						profileLink.text("profile");
@@ -303,7 +286,7 @@ try {
 
 						var recentCommentWrapper = $("<div class='recentCommentWrapper' style='clear:both;margin-top:5px;' />");
 						recentCommentWrapper.appendTo(profilePopup);
-						var loadComments = function (){
+						var loadComments = function () {
 							var userPageUrl = profileLink.attr("href");
 							$.ajax({
 								url: userPageUrl,
@@ -319,7 +302,7 @@ try {
 										of: $("div#menu"),
 										collision: "none"
 									});
-									recentCommentWrapper.find("h2").css({"cursor": "pointer"}).click(loadComments);
+									recentCommentWrapper.find("h2").css({ "cursor": "pointer" }).click(loadComments);
 								},
 								error: function () {
 									window.location.href = userPageUrl;
@@ -327,6 +310,24 @@ try {
 							});
 
 						};
+						selfLink.click(function (event) {
+							event.preventDefault();
+							try {
+								profilePopup.toggle();
+								if (profilePopup.is(":visible")) {
+									profilePopup.position({
+										my: "right top",
+										at: "right bottom",
+										of: $("div#menu"),
+										collision: "fit"
+									});
+									loadComments();
+								}
+							} catch (ex) {
+								console.error(ex);
+							}
+						});
+
 					}
 				} catch (ex) {
 					console.error("FixbN Failed consolidating profile links", ex);
