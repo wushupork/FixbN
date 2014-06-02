@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name		Fix BanniNation
 // @description	fixes up various parts of the bn ui
-// @version		22
+// @version		23
 // @namespace	http://www.bannination.com/fixbn
 // @include		http://www.bannination.com/*
 // @include		http://bannination.com/*
