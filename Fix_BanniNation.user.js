@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name		Fix BanniNation
 // @description	fixes up various parts of the bn ui
-// @version		21
+// @version		22
 // @downloadURL	https://userscripts.org/scripts/source/36110.user.js
 // @updateURL	https://userscripts.org/scripts/source/36110.meta.js
 // @namespace	http://www.bannination.com/fixbn
@@ -1138,6 +1138,10 @@ try {
 										_saveUserId(username, result);
 										dfd.resolve(_createConfig(username, result));
 									}
+									else {
+										console.error("FixbN Error retrieving userid for user {0}".fex(username));
+										dfd.reject(null);
+									}
 								},
 								error: function () {
 									console.error("FixbN Error retrieving userid for user {0}".fex(username));
@@ -1685,8 +1689,8 @@ try {
 					var quotePromise = __userConfig.getConfigPromise(quotedUsername);
 					quotePromise.done(function (quotedConfig) {
 						me.childConfigs[quotedConfig.bnUsername] = quotedConfig;
+						quotedConfigPromises.push(quotePromise);
 					});
-					quotedConfigPromises.push(quotePromise);
 				});
 
 				// when I have the main config and then all child configs, 
