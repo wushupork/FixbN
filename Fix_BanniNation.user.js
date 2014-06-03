@@ -985,7 +985,7 @@ try {
 									result.append("<li>{0} accepted</li>".fex(tag.value));
 									break;
 								case "matched":
-									result.append("<li>{1} matched</li>".fex(tag.message, tag.value));
+									result.append("<li>{0} matched with {1}</li>".fex(tag.value, tag.message));
 									break;
 								default:
 									result.append("<li>{0} rejected: {1}</li>".fex(tag.value, tag.message));
