@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name		Fix BanniNation
 // @description	fixes up various parts of the bn ui
-// @version		24
+// @version		25
 // @namespace	http://www.bannination.com/fixbn
 // @include		http://www.bannination.com/*
 // @include		http://bannination.com/*
@@ -23,7 +23,7 @@
 // @require		https://raw.github.com/bgrins/spectrum/master/spectrum.js
 // @require		https://raw.github.com/ksylvest/jquery-age/master/javascripts/jquery.age.js
 // @require		https://raw.github.com/artificeren/jqSmartTag/master/site/script/jquery.smartTag.js
-// @require		https://raw.github.com/silvestreh/onScreen/master/jquery.onscreen.min.js
+// @require		https://raw.github.com/silvestreh/onScreen/master/jquery.onscreen.js
 
 // @resource	juipepper	https://ajax.aspnetcdn.com/ajax/jquery.ui/1.8.10/themes/pepper-grinder/jquery-ui.css
 // @resource	magnificcss https://raw.github.com/dimsemenov/Magnific-Popup/master/dist/magnific-popup.css
