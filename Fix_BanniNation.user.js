@@ -1,9 +1,7 @@
 // ==UserScript==
 // @name		Fix BanniNation
 // @description	fixes up various parts of the bn ui
-// @version		20
-// @downloadURL	https://userscripts.org/scripts/source/36110.user.js
-// @updateURL	https://userscripts.org/scripts/source/36110.meta.js
+// @version		26
 // @namespace	http://www.bannination.com/fixbn
 // @include		http://www.bannination.com/*
 // @include		http://bannination.com/*
@@ -25,7 +23,7 @@
 // @require		https://raw.github.com/bgrins/spectrum/master/spectrum.js
 // @require		https://raw.github.com/ksylvest/jquery-age/master/javascripts/jquery.age.js
 // @require		https://raw.github.com/artificeren/jqSmartTag/master/site/script/jquery.smartTag.js
-// @require		https://raw.github.com/silvestreh/onScreen/master/jquery.onscreen.min.js
+// @require		https://raw.github.com/silvestreh/onScreen/master/jquery.onscreen.js
 
 // @resource	juipepper	https://ajax.aspnetcdn.com/ajax/jquery.ui/1.8.10/themes/pepper-grinder/jquery-ui.css
 // @resource	magnificcss https://raw.github.com/dimsemenov/Magnific-Popup/master/dist/magnific-popup.css
@@ -66,6 +64,11 @@ try {
 							'type': 'checkbox',
 							'default': true
 						},
+						 'hideModThreads': {
+							'label': 'Hide all Moderated Threads',
+							'type': 'checkbox',
+							'default': false
+						},
 						'fixedHeader': {
 							'label': "Keep Header at Top of Window",
 							'type': 'checkbox',
@@ -78,6 +81,11 @@ try {
 						},
 						'stickyTagger': {
 							'label': "Show a Floating Tagger in Comment Threads",
+							'type': 'checkbox',
+							'default': true
+						},
+						'massTagger': {
+							'label': "Show a Floating Tagger on Main Page",
 							'type': 'checkbox',
 							'default': true
 						},
@@ -276,23 +284,6 @@ try {
 						originalLogoutLink.closest("li").hide();
 						var list = selfLink.closest("ul");
 
-						selfLink.click(function (event) {
-							event.preventDefault();
-							try {
-								profilePopup.toggle();
-								if (profilePopup.is(":visible")) {
-									profilePopup.position({
-										my: "right top",
-										at: "right bottom",
-										of: $("div#menu"),
-										collision: "fit"
-									});
-								loadComments();
-								}
-							} catch (ex) {
-								console.error(ex);
-							}
-						});
 						originalLogoutLink.appendTo(profilePopup);
 						var profileLink = selfLink.clone();
 						profileLink.text("profile");
@@ -303,7 +294,7 @@ try {
 
 						var recentCommentWrapper = $("<div class='recentCommentWrapper' style='clear:both;margin-top:5px;' />");
 						recentCommentWrapper.appendTo(profilePopup);
-						var loadComments = function (){
+						var loadComments = function () {
 							var userPageUrl = profileLink.attr("href");
 							$.ajax({
 								url: userPageUrl,
@@ -319,7 +310,7 @@ try {
 										of: $("div#menu"),
 										collision: "none"
 									});
-									recentCommentWrapper.find("h2").css({"cursor": "pointer"}).click(loadComments);
+									recentCommentWrapper.find("h2").css({ "cursor": "pointer" }).click(loadComments);
 								},
 								error: function () {
 									window.location.href = userPageUrl;
@@ -327,6 +318,24 @@ try {
 							});
 
 						};
+						selfLink.click(function (event) {
+							event.preventDefault();
+							try {
+								profilePopup.toggle();
+								if (profilePopup.is(":visible")) {
+									profilePopup.position({
+										my: "right top",
+										at: "right bottom",
+										of: $("div#menu"),
+										collision: "fit"
+									});
+									loadComments();
+								}
+							} catch (ex) {
+								console.error(ex);
+							}
+						});
+
 					}
 				} catch (ex) {
 					console.error("FixbN Failed consolidating profile links", ex);
@@ -433,7 +442,12 @@ try {
 
 				// fuck the welcome
 				$("div#welcome").css("display", "none");
-
+			   
+				//hide moderated threads
+				if (GM_config.get("hideModThreads")) {
+						$("div.moder").css("display", "none");
+				}
+			
 				// fix bydate stories
 				if (bnurl.isHeadlinesByDate()) {
 					var stories = $("table#stories tr");
@@ -499,8 +513,7 @@ try {
 							var storyRow = $(this);
 							storyRow.append(storyRow.children("div.headline_cell"));
 						});
-					}
-
+					}                   
 				}
 			};
 
@@ -782,6 +795,11 @@ try {
 					} else {
 						commentForm.append("<h2 style='display:inline;color:green;'>Keep Thread Safe For Work</h2>");
 					}
+								var modindex = warning.text().indexOf("thread."); //Add moderated thread text back in *wushupork 05/03/2014
+					if (modindex > 0) {
+						var modtext = warning.text().substr((modindex+7));
+						commentForm.append("<br /><br />This is a moderated thread. "+modtext); 
+					}
 					commentForm.css('width:90%;');
 				}
 
@@ -971,7 +989,7 @@ try {
 									result.append("<li>{0} accepted</li>".fex(tag.value));
 									break;
 								case "matched":
-									result.append("<li>{1} matched</li>".fex(tag.message, tag.value));
+									result.append("<li>{0} matched with {1}</li>".fex(tag.value, tag.message));
 									break;
 								default:
 									result.append("<li>{0} rejected: {1}</li>".fex(tag.value, tag.message));
@@ -1009,7 +1027,33 @@ try {
 						}
 					}
 				}
-
+                
+                if (bnurl.isHeadlinesPage()) {
+					// Add mass tagger
+					if (GM_config.get("massTagger")) {
+						var hrefs = new Array();
+                        var stories = new Array();
+						$("a.commentslink").each(function(){
+                            hrefs.push($(this).attr('href'));
+						})
+                        hrefs.shift();
+                        $.each(hrefs, function(index,value){
+                            stories.push(value.substring(10, 17));
+                        })
+						var stickyTagger = $("<div class='stickyTagger'><form><label for='stickyTaggerInput'>Tag</label><input id='stickyTaggerInput' /></form></div>");							$("div#main").append(stickyTagger);
+						stickyTagger.find("label").click(function () {
+							var tagger = $("#" + $(this).attr("for"));
+							tagger.toggle(250);
+						});
+                        stickyTagger.find("input").tagn({ "storyId": stories });
+						//$.each(stories, function(index,value){
+                            //console.log(mtagin + " " + value);
+							//console.log(stickyTagger.find("input"));
+                            //mtagin.tagn({ "storyId": value });
+						//})
+					}                 	   
+                }
+				
 				if (bnurl.isQueuePage()) {
 					$(".storyentry form input[id^='tag']").each(function () {
 						var queueStoryId = this.id.substring(3);
@@ -1121,6 +1165,10 @@ try {
 										var result = match[1].replace(/\(/g, '').replace(/\)/g, '');
 										_saveUserId(username, result);
 										dfd.resolve(_createConfig(username, result));
+									}
+									else {
+										console.error("FixbN Error retrieving userid for user {0}".fex(username));
+										dfd.reject(null);
 									}
 								},
 								error: function () {
@@ -1649,7 +1697,7 @@ try {
 				this.userName = header.data("uname");
 				var body = $("div.cb.u" + this.userId + "[id$='" + header.attr("id").substring(1) + "']");
 			
-				var peep = $("<span class='peep' >ಠ_ಠ</span>");
+				var peep = $("<span class='peep' >à² _à² </span>");
 				peep.click( $bind(function () {
 					this.$el.closest("div.ch").removeClass("fbnIgnored");
 					var body = $("div.cb.u" + this.userId + "[id$='" + header.attr("id").substring(1) + "']");
@@ -1669,8 +1717,8 @@ try {
 					var quotePromise = __userConfig.getConfigPromise(quotedUsername);
 					quotePromise.done(function (quotedConfig) {
 						me.childConfigs[quotedConfig.bnUsername] = quotedConfig;
+						quotedConfigPromises.push(quotePromise);
 					});
-					quotedConfigPromises.push(quotePromise);
 				});
 
 				// when I have the main config and then all child configs, 
@@ -1947,38 +1995,75 @@ try {
 				} else {
 					url = this.settings.articleTagUrl;
 				}
-
-				url = url.fex({ "storyId": this.settings.storyId });
-				var me = this;
-
-				$.each(this.tagSet.tags, function (index, tag) {
-					var def = new $.Deferred();
-
-					if (tag.status === "valid") {
-
-						// call ajax
-						$.ajax({
-							url: url.fex({ "tag": tag.value }),
-							type: "GET",
-							dataType: "text",
-							context: me,
-							beforeSend: function (jqXHR, settings) {
-								jqXHR.stamp = me.tagSet.stamp;
-								jqXHR.tag = tag;
-							},
-							success: me.tagSubmitSuccess,
-							error: me.tagSubmitError,
-							complete: function (jqXHR, textStatus) {
+	
+	            if (bnurl.isHeadlinesPage()){
+                    	var temptags = this.tagSet.tags;
+                    	var me = this;
+                    $.each(this.settings.storyId, function(index,tempid) {
+                        var tempurl = url.fex({ "storyId": tempid });
+						var tempme = me;
+						$.each(temptags, function (index, tag) {
+							var def = new $.Deferred();
+		
+							if (tag.status === "valid") {		
+								// call ajax	
+								$.ajax({
+									url: tempurl.fex({ "tag": tag.value }),
+									type: "GET",
+									dataType: "text",
+									context: tempme,
+									beforeSend: function (jqXHR, settings) {
+										jqXHR.stamp = tempme.tagSet.stamp;
+										jqXHR.tag = tag;
+									},
+									success: tempme.tagSubmitSuccess,
+									error: tempme.tagSubmitError,
+									complete: function (jqXHR, textStatus) {
+										def.resolve();
+									}
+								});
+							} else {
+								$bind(tempme.settings.tagUpdated, tempme.$el)(tempme.tagSet);
 								def.resolve();
 							}
+		
+							promises.push(def);
 						});
-					} else {
-						$bind(me.settings.tagUpdated, me.$el)(me.tagSet);
-						def.resolve();
-					}
+					});
+				} else {
+					url = url.fex({ "storyId": this.settings.storyId });
+	                console.log(url);
+					var me = this;
 
-					promises.push(def);
-				});
+					$.each(this.tagSet.tags, function (index, tag) {
+						var def = new $.Deferred();
+	
+						if (tag.status === "valid") {
+	
+							// call ajax
+							$.ajax({
+								url: url.fex({ "tag": tag.value }),
+								type: "GET",
+								dataType: "text",
+								context: me,
+								beforeSend: function (jqXHR, settings) {
+									jqXHR.stamp = me.tagSet.stamp;
+									jqXHR.tag = tag;
+								},
+								success: me.tagSubmitSuccess,
+								error: me.tagSubmitError,
+								complete: function (jqXHR, textStatus) {
+									def.resolve();
+								}
+							});
+						} else {
+							$bind(me.settings.tagUpdated, me.$el)(me.tagSet);
+							def.resolve();
+						}
+
+						promises.push(def);
+					});
+                }
 			} catch (ex) {
 				console.error("Fix bN Failed sending tags", ex);
 			}
