@@ -1697,7 +1697,7 @@ try {
 				this.userName = header.data("uname");
 				var body = $("div.cb.u" + this.userId + "[id$='" + header.attr("id").substring(1) + "']");
 			
-				var peep = $("<span class='peep' >à² _à² </span>");
+				var peep = $("<span class='peep' >ಠ_ಠ</span>");
 				peep.click( $bind(function () {
 					this.$el.closest("div.ch").removeClass("fbnIgnored");
 					var body = $("div.cb.u" + this.userId + "[id$='" + header.attr("id").substring(1) + "']");
