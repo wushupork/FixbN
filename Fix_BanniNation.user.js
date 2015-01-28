@@ -1,10 +1,12 @@
 // ==UserScript==
 // @name		Fix BanniNation
 // @description	fixes up various parts of the bn ui
-// @version		25
-// @namespace	http://www.bannination.com/fixbn
+// @version		25.cp.10a
+// @namespace	        http://www.bannination.com/fixbncp
 // @include		http://www.bannination.com/*
 // @include		http://bannination.com/*
+// @include		https://www.bannination.com/*
+// @include		https://bannination.com/*
 // @grant		GM_getValue
 // @grant		GM_setValue
 // @grant		GM_log
@@ -21,9 +23,11 @@
 // @require		https://raw.github.com/dimsemenov/Magnific-Popup/master/dist/jquery.magnific-popup.js
 // @require		https://raw.github.com/needim/noty/master/js/noty/packaged/jquery.noty.packaged.min.js
 // @require		https://raw.github.com/bgrins/spectrum/master/spectrum.js
-// @require		https://raw.github.com/ksylvest/jquery-age/master/javascripts/jquery.age.js
+// 			https://raw.github.com/ksylvest/jquery-age/master/javascripts/jquery.age.js
 // @require		https://raw.github.com/artificeren/jqSmartTag/master/site/script/jquery.smartTag.js
 // @require		https://raw.github.com/silvestreh/onScreen/master/jquery.onscreen.js
+// @require		http://momentjs.com/downloads/moment.js
+// @require		http://momentjs.com/downloads/moment-timezone-with-data.js
 
 // @resource	juipepper	https://ajax.aspnetcdn.com/ajax/jquery.ui/1.8.10/themes/pepper-grinder/jquery-ui.css
 // @resource	magnificcss https://raw.github.com/dimsemenov/Magnific-Popup/master/dist/magnific-popup.css
@@ -34,6 +38,7 @@
 
 // main code
 var __fixbn = null;
+
 try {
 	(function ($) {
 		"use strict";
@@ -62,7 +67,7 @@ try {
 						'switchColumns': {
 							'label': 'Switch Headline and Comment Columns',
 							'type': 'checkbox',
-							'default': true
+							'default': false
 						},
 						 'hideModThreads': {
 							'label': 'Hide all Moderated Threads',
@@ -72,7 +77,7 @@ try {
 						'fixedHeader': {
 							'label': "Keep Header at Top of Window",
 							'type': 'checkbox',
-							'default': true
+							'default': false
 						},
 						'scrollArrow': {
 							'label': 'Show a Floating Arrow for Scrolling',
@@ -89,12 +94,19 @@ try {
 							'type': 'int',
 							'min': 3,
 							'max': 30,
-							'default': 6
+							'default': 4
+						},
+						'tagWait': {
+							'label': 'Tag submission delay (ms)',
+							'type': 'int',
+							'min': 1,
+							'max': 1000,
+							'default': 10
 						},
 						'repliesOveride': {
 							'label': "Override the masterbn replies notification",
 							'type': 'checkbox',
-							'default': true
+							'default': false
 						},
 						'ignoreReplies': {
 							'label': "Ignoring a User Also Ignores All Replies To That User",
@@ -104,7 +116,7 @@ try {
 						'showRepliesToMe': {
 							'label': "Show a List of Comments That Are Replies To Me",
 							'type': 'checkbox',
-							'default': true
+							'default': false
 						},
 						'nabbitVisibility': {
 							'label': "Enable Nabbit User Images (Can Be Overridden Per-User)",
@@ -114,16 +126,42 @@ try {
 						'highScoreThreshold': {
 							'label': "Mark Posts With Scores Over:",
 							'type': 'int',
-							'default': '4'
+							'default': '99'
 						},
 						'autoLinkComments': {
 							'label': "Auto-linkify pasted URLs",
 							'type': 'checkbox',
-							'default': false
+							'default': true
+						},
+						'modifyTimeStamps': {
+							'label': 'Time Stamps',
+      							'type': 'select',
+      							'options': ['Server', 'UTC', 'Local'],
+      							'default': 'Local',
+						},
+						'timeFormat': {
+							'label': 'Time Stamp Format',
+      							'type': 'text',
+      							'default': 'YYYY-MM-DD HH:mm:ss z',
+							'title': 'Time Stamp Format'
+						},
+						'prettifyTimeStamps': {
+							'label': 'Prettify Local Time Stamps',
+							'type': 'checkbox',
+							'default': true
+						},
+						'stripclubClose': {
+							'label': 'Strip Club closing time',
+							'type': 'int',
+							'min': 0,
+							'max': 24,
+							'default': '8'
 						}
 					},
-					'frame': mainConfigFrame
+					'frame': mainConfigFrame,
+					'css': '#FixbNconfig_buttons_holder {position:relative; width:40%; float:right !important;}'
 				});
+
 				GM_config.onSave = function () { if (GM_config.isOpen) { GM_config.close(); window.location.reload(); } };
 				GM_config.onOpen = function (doc, win, frame) {
 					var notyDuration = $(frame).find("input[id$='tagNotyDuration']");
@@ -136,8 +174,9 @@ try {
 					wrapper.prepend(extras);
 
 					
-					$("<p><a style='font-size:14px; color:black;' href='http://www.bannination.com/comments/5182401/'>Bannination.com Feedback Thread</a></p>").appendTo(extras);
-					$("<p><a style='font-size:14px; color:black;' href='https://github.com/artificeren/FixbN/issues?state=open'>Fix bN GitHub Project Feedback</a></p>").appendTo(extras);
+					$("<p><a style='font-size:14px; color:black;' href='/comments/5182401/' target='_blank'>Bannination.com Feedback Thread</a></p>").appendTo(extras);
+					$("<p><a style='font-size:14px; color:black;' href='https://github.com/artificeren/FixbN/issues?state=open' target='_blank'>Fix bN GitHub Project Feedback</a></p>").appendTo(extras);
+					$("<p><a style='font-size:14px; color:black;' href='http://momentjs.com/docs/#/displaying/format/' target='_blank'>Reference for time stamp formatting</a></p>").appendTo(extras);
 
 					var bitCoinDonate = $('<div style="font-size:14px;margin:0 auto;width:300px" class="blockchain-btn" data-address="1Fe2d6giUvTMJniufMyivybg6v6HQGpeXG" data-shared="false"> <div class="blockchain stage-begin"><p style="text-decoration:underline;cursor:pointer;"> Donate Bitcoin to Fix bN </p></div> <div class="blockchain stage-loading" style="text-align:center"> <img src="data:image/gif;base64,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"/> </div> <div class="blockchain stage-ready"> <p>Bitcoin Address: <span style="font-size:12px;">[[address]]</span></p> <p class="qr-code"></p> </div> <div class="blockchain stage-paid"> <p>Donation of <b>[[value]] BTC</b> Received. Thank You.</p> </div> <div class="blockchain stage-error"> <font color="red">[[error]]</font> </div> </div>');
 					bitCoinDonate.appendTo(extras).bitcoin();
@@ -250,6 +289,7 @@ try {
 				// split the menu
 				var leftMenu = $("<ul class='leftMenu'></ul>");
 				leftMenu
+				// .append($("div#menu a[href$='/queue']").closest("li"))
 				.append($("div#menu a[href$='/queue']").closest("li"))
 				.append("<li><a href='{0}'>today</a></li>".fex(this.createDateUrl(0)))
 				.append("<li><a href='{0}'>yesterday</a></li>".fex(this.createDateUrl(-1)))
@@ -258,7 +298,7 @@ try {
 				.append("<li><a href='/comments/1000' class='fbnBgLink " + $("div#welcome a[href='/comments/1000']").attr("class") + "'>beer garden</a></li>")
 				.prependTo("div#menu");
 
-				if ((new Date()).getHours() < 8 && $("div#menu a:contains('dangerous mode')").length > 0) {
+				if ((new Date()).getHours() < GM_config.get("stripclubClose") && $("div#menu a:contains('dangerous mode')").length > 0) {
 					leftMenu.append("<li class='nsfw'><a href='/comments/901' class='nsfw'>strip club</a></li>");
 				}
 
@@ -461,7 +501,7 @@ try {
 					// stories should show nsfw tags
 					$("table#stories tr.nsfw a.storylink").css({
 						"padding-right": "85px",
-						"background": "url('http://www.bannination.com/img/nsfw.jpg') no-repeat scroll right center transparent"
+						"background": "url('/img/nsfw.jpg') no-repeat scroll right center transparent"
 					});
 
 				}
@@ -597,19 +637,47 @@ try {
 					imgTitle: $.fn.nabbit.defaults.userId
 				});
 
-				// pretty dates
+
+				// Dates
 				var timeSpans = $("div.ch span.time");
+				var timeFormat = GM_config.get("timeFormat");
+
 				timeSpans.each(function () {
 					var bigSpot = $(this);
 
-					var postTime = bigSpot.text();
-					var cleanTime = (postTime || "").replace(/-/g, "/").replace(/\.0/g, " PST"); // HACK!
-					bigSpot.attr("datetime", cleanTime);
-					bigSpot.attr("title", postTime);
-					bigSpot.age({ suffixes: { past: "ago", future: "from now" } });
+					// Get time posted in server time
+					var htmlTime = bigSpot.text();
+					var cleanTime = (htmlTime || "").replace(/\.0/g, ""); // get rid of ".0"
+					if (cleanTime.length < 22) {
+						// length < 22 implies YYYY-MM-DD HH:mm:ss as used in Beer Garden
+						var postTime = moment.tz(cleanTime, "America/Los_Angeles");
+					} else {
+						// length > 22 implies Day Mon dd HH:mm:ss PST YYYY as used in regular threads
+						var postTime = moment.parseZone(cleanTime);
+					}
+					
+					// Convert to UTC
+					var utcTime = postTime.clone().tz("UTC");
+					var fmtutcTime = utcTime.format(timeFormat);
+					bigSpot.attr("title", fmtutcTime);
+					bigSpot.attr("datetime", fmtutcTime); // what does this do?
 
+					if (GM_config.get("modifyTimeStamps")=='UTC') {
+						bigSpot.text(fmtutcTime);
+					} else if (GM_config.get("modifyTimeStamps")=='Local') {
+						// convert utcTime to a local date string
+						var fmtLocalTime = moment.utc(utcTime).local().format(timeFormat)
+						bigSpot.text(fmtLocalTime);
+						if(GM_config.get("prettifyTimeStamps")) {
+							bigSpot.text(utcTime.fromNow());
+							// bigSpot.age({ suffixes: { past: "ago", future: "from now" } });
+						} else {
+							bigSpot.text(fmtLocalTime);
+						}
+					}
 				});
 
+				// nabbit big images
 				// nabbit big images
 				timeSpans.nabbit({ 
 					imgSize: 'large',
@@ -735,7 +803,7 @@ try {
 								if (url.is("url") && url.protocol().indexOf("http") === 0) {
 									var tag = "";
 
-									switch (url.suffix()) {
+									switch (url.suffix().toLowerCase()) {
 										case "gif":
 										case "jpg":
 										case "jpeg":
@@ -743,7 +811,7 @@ try {
 											tag = "<img src='{0}' />".fex(change);
 											break;
 										default:
-											tag = "<a href='{0}'>{0}</a>".fex(change);
+											tag = "<a href='{0}' target='_blank'>{0}</a>".fex(change);
 											break;
 									}
 
@@ -791,7 +859,7 @@ try {
 					} else {
 						commentForm.append("<h2 style='display:inline;color:green;'>Keep Thread Safe For Work</h2>");
 					}
-								var modindex = warning.text().indexOf("thread."); //Add moderated thread text back in *wushupork 05/03/2014
+					var modindex = warning.text().indexOf("thread."); //Add moderated thread text back in *wushupork 05/03/2014
 					if (modindex > 0) {
 						var modtext = warning.text().substr((modindex+7));
 						commentForm.append("<br /><br />This is a moderated thread. "+modtext); 
@@ -1122,7 +1190,7 @@ try {
 
 							// get userid from ajax
 							console.log("FixbN Looking up userId on bannination.com/users/{0}".fex(username));
-							var userPageUrl = "http://www.bannination.com/users/{0}".fex(username);
+							var userPageUrl = "/users/{0}".fex(username);
 							$.ajax({
 								url: userPageUrl,
 								dataType: "text",
@@ -1554,7 +1622,7 @@ var bnurl = (function () {
 			var commentId = this.$el.closest("div.ch").attr("id").substring(1);
 
 			//http://www.bannination.com/comments/5181856/sunlight/5087531
-			var sunlightUrl = "http://www.bannination.com/comments/" + this.settings.threadId + "/sunlight/" + commentId;
+			var sunlightUrl = "/comments/" + this.settings.threadId + "/sunlight/" + commentId;
 
 			this.$el.data("originalcursor", this.$el.css("cursor"));
 			this.$el.css("cursor", "progress");
@@ -1893,6 +1961,15 @@ try {
 	console.error("FixbN Failed declaring UserDecoration", ex);
 }
 
+function sleep(milliseconds) {
+  var start = new Date().getTime();
+  for (var i = 0; i < 1e7; i++) {
+    if ((new Date().getTime() - start) > milliseconds){
+      break;
+    }
+  }
+}
+
 // bN taggination replacement
 (function ($) {
 	"use strict";
@@ -1957,6 +2034,7 @@ try {
 
 		Tagn.prototype.submitTags = function() {
 			var promises = [];
+			var tagWait = GM_config.get("tagWait");
 
 			try {
 				var url = "";
@@ -1996,6 +2074,7 @@ try {
 					}
 
 					promises.push(def);
+					sleep(tagWait);
 				});
 			} catch (ex) {
 				console.error("Fix bN Failed sending tags", ex);
