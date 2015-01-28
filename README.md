@@ -7,7 +7,6 @@ This script requires you to have Greasemonkey (for firefox) or Tampermonkey (for
 
 Changes from Artificeren's version:
 
-Changes from the original:
 (1) Fixed auto-linkification for images with upper case letters in their extension (noted by bunnythor).
 (2) Changed linkification to include "target='_blank'" for all links.
 (3) Configurable strip club closing time.
