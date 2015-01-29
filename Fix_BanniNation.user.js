@@ -653,31 +653,32 @@ try {
 					// Get time posted in server time
 					var htmlTime = bigSpot.text();
 					var cleanTime = (htmlTime || "").replace(/\.0/g, ""); // get rid of ".0"
+                    var cleanLength = cleanTime.length;
 					if (cleanTime.length < 22) {
 						// length < 22 implies YYYY-MM-DD HH:mm:ss as used in Beer Garden
-						var postTime = moment.tz(cleanTime, "America/Los_Angeles");
+                        var postTime = moment.tz(cleanTime, "YYYY-MM-DD HH:mm:ss", "America/Los_Angeles");
 					} else {
 						// length > 22 implies Day Mon dd HH:mm:ss PST YYYY as used in regular threads
-						var postTime = moment.parseZone(cleanTime);
+                        var cleanTimeLong = cleanTime.substring(4,(cleanLength-8)) + cleanTime.substring((cleanLength-4),(cleanLength+1));
+                        var postTime = moment.tz(cleanTimeLong, "MMM DD HH:mm:ss YYYY", "America/Los_Angeles");
 					}
 					
 					// Convert to UTC
-					var utcTime = postTime.clone().tz("UTC");
-					var fmtutcTime = utcTime.format(timeFormat);
+					var utcTime = moment(postTime).utc();
+                    var fmtutcTime = utcTime.format(timeFormat);
 					bigSpot.attr("title", fmtutcTime);
 					bigSpot.attr("datetime", fmtutcTime); // what does this do?
 
 					if (GM_config.get("modifyTimeStamps")=='UTC') {
 						bigSpot.text(fmtutcTime);
 					} else if (GM_config.get("modifyTimeStamps")=='Local') {
-						// convert utcTime to a local date string
-						var fmtLocalTime = moment.utc(utcTime).local().format(timeFormat)
-						bigSpot.text(fmtLocalTime);
+						// convert utcTime to a local date string                
+						var localTime = utcTime.local();
 						if(GM_config.get("prettifyTimeStamps")) {
-							bigSpot.text(utcTime.fromNow());
+							bigSpot.text(localTime.fromNow());
 							// bigSpot.age({ suffixes: { past: "ago", future: "from now" } });
 						} else {
-							bigSpot.text(fmtLocalTime);
+							bigSpot.text(localTime.format(timeFormat));
 						}
 					}
 				});
