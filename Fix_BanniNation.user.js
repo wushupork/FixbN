@@ -2085,7 +2085,6 @@ function sleep(milliseconds) {
                                                         var def = new $.Deferred();
          
                                                         if (tag.status === "valid") {
-							console.log ("tagging", tempurl, tag);
                                                                 // call ajax
                                                                 $.ajax({
                                                                         url: tempurl.fex({ "tag": tag.value }),
@@ -2106,7 +2105,8 @@ function sleep(milliseconds) {
                                                                 $bind(tempme.settings.tagUpdated, tempme.$el)(tempme.tagSet);
                                                                 def.resolve();
                                                         }
-                                                promises.push(def);
+                                                        promises.push(def);
+        					        sleep(tagWait);
                                                 });
                                         });
 // [/mass tagger]        
