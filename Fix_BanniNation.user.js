@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name		Fix BanniNation
 // @description	fixes up various parts of the bn ui
-// @version		25.cp.10a
+// @version		25.cp.11
 // @namespace	        http://www.bannination.com/fixbncp
 // @include		http://www.bannination.com/*
 // @include		http://bannination.com/*
@@ -89,6 +89,11 @@ try {
 							'type': 'checkbox',
 							'default': true
 						},
+                                                'massTagger': {
+                                                        'label': "Show a Floating Mass Tagger on Main Page",
+                                                        'type': 'checkbox',
+                                                        'default': true
+                                                },
 						'tagNotyDuration': {
 							'label': 'Tag Notification Duration',
 							'type': 'int',
@@ -1091,7 +1096,33 @@ try {
 						}
 					}
 				}
-
+// [mass tagger by wushupork]
+                                if (bnurl.isHeadlinesPage()) {
+                                        // Add mass tagger
+                                        if (GM_config.get("massTagger")) {
+                                                var hrefs = new Array();
+                                                var stories = new Array();
+                                                $("a.commentslink").each(function() {
+                                                        hrefs.push($(this).attr('href'));
+                                                })
+                                                hrefs.shift();
+                                                $.each(hrefs, function(index,value) {
+                                                        stories.push(value.substring(10, 17));
+                                                })
+                                                var stickyTagger = $("<div class='stickyTagger'><form><label for='stickyTaggerInput'>Tag</label><input id='stickyTaggerInput' /></form></div>");                                                  $("div#main").append(stickyTagger);
+                                                stickyTagger.find("label").click(function () {
+                                                        var tagger = $("#" + $(this).attr("for"));
+                                                        tagger.toggle(250);
+                                                });
+                                                stickyTagger.find("input").tagn({ "storyId": stories });
+                                                //$.each(stories, function(index,value){
+                                                      //console.log(mtagin + " " + value);
+                                                      //console.log(stickyTagger.find("input"));
+                                                      //mtagin.tagn({ "storyId": value });
+                                                //})
+                                        }                          
+                                }
+// /[mass tagger]
 				if (bnurl.isQueuePage()) {
 					$(".storyentry form input[id^='tag']").each(function () {
 						var queueStoryId = this.id.substring(3);
@@ -2043,39 +2074,78 @@ function sleep(milliseconds) {
 				} else {
 					url = this.settings.articleTagUrl;
 				}
+// [mass tagger by wushupork]
+                                if (bnurl.isHeadlinesPage()) {
+                                        var temptags = this.tagSet.tags;
+                                        var me = this;
+                                        $.each(this.settings.storyId, function(index,tempid) {
+                                                var tempurl = url.fex({ "storyId": tempid });
+                                                var tempme = me;
+                                                $.each(temptags, function (index, tag) {
+                                                        var def = new $.Deferred();
+         
+                                                        if (tag.status === "valid") {
+							console.log ("tagging", tempurl, tag);
+                                                                // call ajax
+                                                                $.ajax({
+                                                                        url: tempurl.fex({ "tag": tag.value }),
+                                                                        type: "GET",
+                                                                        dataType: "text",
+                                                                        context: tempme,
+                                                                        beforeSend: function (jqXHR, settings) {
+                                                                                jqXHR.stamp = tempme.tagSet.stamp;
+                                                                                jqXHR.tag = tag;
+                                                                        },
+                                                                        success: tempme.tagSubmitSuccess,
+                                                                        error: tempme.tagSubmitError,
+                                                                        complete: function (jqXHR, textStatus) {
+                                                                                def.resolve();
+                                                                        }
+                                                                });
+                                                        } else {
+                                                                $bind(tempme.settings.tagUpdated, tempme.$el)(tempme.tagSet);
+                                                                def.resolve();
+                                                        }
+                                                promises.push(def);
+                                                });
+                                        });
+// [/mass tagger]        
+                                } else {
+        
+        				url = url.fex({ "storyId": this.settings.storyId });
+        				var me = this;
+        
+        				$.each(this.tagSet.tags, function (index, tag) {
+        					var def = new $.Deferred();
+ 
+        					if (tag.status === "valid") {
+        
+        						// call ajax
+        						$.ajax({
+        							url: url.fex({ "tag": tag.value }),
+        							type: "GET",
+        							dataType: "text",
+        							context: me,
+        							beforeSend: function (jqXHR, settings) {
+        								jqXHR.stamp = me.tagSet.stamp;
+        								jqXHR.tag = tag;
+        							},
+        							success: me.tagSubmitSuccess,
+        							error: me.tagSubmitError,
+        							complete: function (jqXHR, textStatus) {
+        								def.resolve();
+        							}
+        						});
+        					} else {
+        						$bind(me.settings.tagUpdated, me.$el)(me.tagSet);
+        						def.resolve();
+        					}
+        
+        					promises.push(def);
+        					sleep(tagWait);
+        				});
+                                }
 
-				url = url.fex({ "storyId": this.settings.storyId });
-				var me = this;
-
-				$.each(this.tagSet.tags, function (index, tag) {
-					var def = new $.Deferred();
-
-					if (tag.status === "valid") {
-
-						// call ajax
-						$.ajax({
-							url: url.fex({ "tag": tag.value }),
-							type: "GET",
-							dataType: "text",
-							context: me,
-							beforeSend: function (jqXHR, settings) {
-								jqXHR.stamp = me.tagSet.stamp;
-								jqXHR.tag = tag;
-							},
-							success: me.tagSubmitSuccess,
-							error: me.tagSubmitError,
-							complete: function (jqXHR, textStatus) {
-								def.resolve();
-							}
-						});
-					} else {
-						$bind(me.settings.tagUpdated, me.$el)(me.tagSet);
-						def.resolve();
-					}
-
-					promises.push(def);
-					sleep(tagWait);
-				});
 			} catch (ex) {
 				console.error("Fix bN Failed sending tags", ex);
 			}
